@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La vivienda a través del tiempo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1a120a;
+    --fg:#f2e6d3;
+    --accent:#e2793f;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html{
+    scroll-behavior:smooth;
+    scroll-padding-top: env(safe-area-inset-top,0px);
+  }
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Work Sans',sans-serif;
+    background:var(--bg);
+    color:var(--fg);
+    transition: background-color 1.1s ease, color 1.1s ease;
+    padding-top: env(safe-area-inset-top,0px);
+    padding-bottom: env(safe-area-inset-bottom,0px);
+    overflow-x:hidden;
+  }
+  body.modal-open{ overflow:hidden; }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001s !important; transition-duration:0.2s !important;}
+  }
+
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0; letter-spacing:-0.01em;}
+  em{font-style:italic; font-weight:400; color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  /* ---------- rail nav ---------- */
+  .rail{
+    position:fixed;
+    right:1.6rem;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:40;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+    align-items:flex-end;
+  }
+  .rail button{
+    background:none;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+    padding:0.2rem;
+    color:inherit;
+    opacity:0.5;
+    transition:opacity .4s ease;
+  }
+  .rail button.active{opacity:1;}
+  .rail .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:currentColor;
+    box-shadow:0 0 0 0 var(--accent);
+    transition: background .4s ease, transform .4s ease;
+  }
+  .rail button.active .dot{
+    background:var(--accent);
+    transform:scale(1.35);
+  }
+  .rail .lbl{
+    font-size:0.72rem;
+    letter-spacing:0.02em;
+    max-width:0;
+    overflow:hidden;
+    white-space:nowrap;
+    opacity:0;
+    transition: max-width .4s ease, opacity .3s ease;
+  }
+  .rail button:hover .lbl, .rail button.active .lbl{
+    max-width:9rem; opacity:0.9;
+  }
+  @media (max-width:800px){
+    .rail{
+      right:auto; left:50%; top:auto;
+      bottom:calc(env(safe-area-inset-bottom,0px) + 0.9rem);
+      transform:translateX(-50%);
+      flex-direction:row;
+      background:rgba(0,0,0,0.28);
+      padding:0.5rem 0.8rem;
+      border-radius:99px;
+      backdrop-filter: blur(6px);
+    }
+    .rail .lbl{display:none;}
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    padding: 6rem min(8vw,4.5rem);
+    max-width:1200px;
+  }
+  .hero .kicker{
+    font-size:0.95rem;
+    color:var(--accent);
+    margin-bottom:1.1rem;
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    opacity:0;
+    animation: rise .9s ease .1s forwards;
+  }
+  .hero h1{
+    font-size:clamp(2.6rem, 6vw + 1rem, 5.2rem);
+    line-height:1.02;
+    max-width:16ch;
+    opacity:0;
+    animation: rise 1s ease .25s forwards;
+  }
+  .hero p{
+    font-size:clamp(1.05rem,1.2vw+0.6rem,1.35rem);
+    max-width:38ch;
+    line-height:1.55;
+    margin-top:1.6rem;
+    opacity:0;
+    animation: rise 1s ease .5s forwards;
+    color:color-mix(in srgb, var(--fg) 82%, transparent);
+  }
+
+  /* ---------- intro button ---------- */
+  .intro-btn{
+    margin-top:2.2rem;
+    display:inline-flex;
+    align-items:center;
+    gap:0.65rem;
+    background:none;
+    border:1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    color:var(--fg);
+    font-family:'Work Sans',sans-serif;
+    font-size:0.95rem;
+    letter-spacing:0.01em;
+    padding:0.75rem 1.3rem;
+    border-radius:99px;
+    cursor:pointer;
+    opacity:0;
+    animation: rise 1s ease .68s forwards;
+    transition: border-color .35s ease, background-color .35s ease, transform .25s ease;
+  }
+  .intro-btn:hover{
+    border-color:var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    transform: translateY(-1px);
+  }
+  .intro-btn svg{width:15px; height:15px; flex-shrink:0;}
+
+  .scrollcue{
+    margin-top:2.4rem;
+    display:inline-flex;
+    align-items:center;
+    gap:0.7rem;
+    font-size:0.85rem;
+    opacity:0;
+    background:none;
+    border:none;
+    color:inherit;
+    font-family:'Work Sans',sans-serif;
+    cursor:pointer;
+    padding:0.2rem 0;
+    animation: rise 1s ease .85s forwards;
+  }
+  .scrollcue svg{width:14px;height:20px; animation: bob 2s ease-in-out infinite;}
+
+  @keyframes rise{
+    from{opacity:0; transform:translateY(16px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(6px);}
+  }
+
+  /* ---------- intro modal ---------- */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: max(1.5rem, env(safe-area-inset-top,0px)) 1.5rem max(1.5rem, env(safe-area-inset-bottom,0px));
+    background: color-mix(in srgb, #0a0603 78%, transparent);
+    backdrop-filter: blur(6px);
+    opacity:0;
+    visibility:hidden;
+    transition: opacity .35s ease, visibility 0s linear .35s;
+  }
+  .modal-overlay.open{
+    opacity:1;
+    visibility:visible;
+    transition: opacity .35s ease, visibility 0s linear 0s;
+  }
+  .intro-modal{
+    width:100%;
+    max-width:560px;
+    max-height:min(88vh, 640px);
+    display:flex;
+    flex-direction:column;
+    background: color-mix(in srgb, var(--bg) 92%, #000 8%);
+    border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius:18px;
+    padding: 2.1rem 2.1rem 1.7rem;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    transform: translateY(14px) scale(0.98);
+    opacity:0;
+    transition: transform .4s cubic-bezier(.2,.8,.2,1), opacity .35s ease;
+  }
+  .modal-overlay.open .intro-modal{
+    transform: translateY(0) scale(1);
+    opacity:1;
+  }
+  .modal-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:1rem;
+  }
+  .modal-head .kicker{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    color:var(--accent);
+    font-size:0.88rem;
+    display:block;
+    margin-bottom:0.4rem;
+  }
+  .intro-modal h2{
+    font-size:clamp(1.5rem,2.4vw+0.8rem,2rem);
+    line-height:1.1;
+  }
+  .modal-close{
+    background:none;
+    border:1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+    color:var(--fg);
+    width:2.1rem;
+    height:2.1rem;
+    min-width:2.1rem;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: border-color .3s ease, transform .3s ease, background-color .3s ease;
+  }
+  .modal-close:hover{
+    border-color:var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    transform:rotate(90deg);
+  }
+  .modal-close svg{width:14px; height:14px;}
+
+  .intro-modal p.hint{
+    margin-top:0.9rem;
+    font-size:0.95rem;
+    line-height:1.55;
+    color:color-mix(in srgb, var(--fg) 72%, transparent);
+    max-width:46ch;
+  }
+
+  .intro-body{
+    margin-top:1.3rem;
+    padding-right:0.3rem;
+    overflow-y:auto;
+    flex:1;
+  }
+  .intro-body p{
+    margin:0 0 1rem;
+    font-size:1rem;
+    line-height:1.65;
+    color:color-mix(in srgb, var(--fg) 90%, transparent);
+    max-width:48ch;
+  }
+  .intro-body p:last-child{margin-bottom:0;}
+  .intro-body strong{color:var(--fg); font-weight:600;}
+  .intro-body .signature{
+    margin-top:1.5rem;
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    color:var(--accent);
+    font-size:1.05rem;
+  }
+  .intro-tags{
+    margin-top:1.3rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.5rem;
+  }
+  .intro-tags span{
+    font-size:0.76rem;
+    letter-spacing:0.02em;
+    border:1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    color: color-mix(in srgb, var(--fg) 85%, transparent);
+    padding:0.32rem 0.7rem;
+    border-radius:99px;
+  }
+
+  .modal-foot{
+    margin-top:1.4rem;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:1rem;
+  }
+  .modal-save{
+    background: var(--accent);
+    color: color-mix(in srgb, #000 78%, var(--fg) 22%);
+    border:none;
+    font-family:'Work Sans',sans-serif;
+    font-weight:500;
+    font-size:0.92rem;
+    padding:0.72rem 1.5rem;
+    border-radius:99px;
+    cursor:pointer;
+    transition: transform .25s ease, filter .3s ease;
+  }
+  .modal-save:hover{
+    filter:brightness(1.08);
+    transform:translateY(-1px);
+  }
+
+  @media (max-width:520px){
+    .intro-modal{ padding:1.7rem 1.4rem 1.4rem; border-radius:14px; }
+  }
+
+  /* ---------- era sections ---------- */
+  .era{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding: 5rem min(8vw,4.5rem);
+  }
+  .era-grid{
+    max-width:1200px;
+    margin:0 auto;
+    width:100%;
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: clamp(2rem,5vw,5rem);
+    align-items:center;
+  }
+  .era:nth-of-type(even) .era-grid{ direction: ltr; }
+  .era:nth-of-type(even) .visual{ order:-1; }
+
+  .era-meta{
+    display:flex; align-items:baseline; gap:0.9rem;
+    margin-bottom:1.1rem;
+  }
+  .era-num{
+    font-family:'Fraunces',serif;
+    font-weight:300;
+    font-size:1.6rem;
+    color:var(--accent);
+  }
+  .era-range{
+    font-size:0.95rem;
+    font-style:italic;
+    color:color-mix(in srgb, var(--fg) 70%, transparent);
+  }
+  .era h2{
+    font-size:clamp(2rem, 3.4vw + 0.8rem, 3.4rem);
+    line-height:1.05;
+    max-width:15ch;
+  }
+  .era .body{
+    margin-top:1.4rem;
+    font-size:clamp(1rem,0.4vw+0.9rem,1.12rem);
+    line-height:1.65;
+    max-width:52ch;
+    color:color-mix(in srgb, var(--fg) 88%, transparent);
+  }
+  .era .body strong{color:var(--fg); font-weight:600;}
+
+  .nota{
+    margin-top:1.8rem;
+    padding:1rem 1.2rem;
+    border-left:2px solid var(--accent);
+    max-width:48ch;
+    background:color-mix(in srgb, var(--fg) 6%, transparent);
+  }
+  .nota .tag{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:0.9rem;
+    color:var(--accent);
+    display:block;
+    margin-bottom:0.35rem;
+  }
+  .nota p{margin:0; font-size:0.96rem; line-height:1.55;}
+
+  .visual{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+  .visual svg{width:100%; max-width:340px; height:auto; overflow:visible;}
+
+  @media (max-width:900px){
+    .era-grid{grid-template-columns:1fr; text-align:left;}
+    .era:nth-of-type(even) .visual{order:0;}
+    .visual svg{max-width:220px; margin-bottom:1rem;}
+    .era{padding:4.5rem 6vw;}
+  }
+
+  /* ---------- signature animations, per era ---------- */
+
+  /* 1. cueva: flame flicker */
+  .flame-core{
+    transform-origin: 50% 100%;
+    animation: flicker 2.6s ease-in-out infinite;
+  }
+  @keyframes flicker{
+    0%,100%{ transform: scaleY(1) scaleX(1) rotate(0deg); }
+    25%{ transform: scaleY(1.06) scaleX(0.97) rotate(-1.5deg); }
+    50%{ transform: scaleY(0.94) scaleX(1.04) rotate(1deg); }
+    75%{ transform: scaleY(1.03) scaleX(0.98) rotate(-0.5deg); }
+  }
+  .draw{
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    transition: stroke-dashoffset 1.6s ease;
+  }
+  .era.seen .draw{ stroke-dashoffset:0; }
+  .era.seen .draw.d2{ transition-delay:.25s; }
+  .era.seen .draw.d3{ transition-delay:.5s; }
+  .era.seen .draw.d4{ transition-delay:.75s; }
+
+  /* 4. industrial: smoke puffs */
+  .puff{ opacity:0; }
+  .era.seen .puff{ animation: puff 3.2s ease-in infinite; }
+  .era.seen .puff.p2{ animation-delay:1s; }
+  .era.seen .puff.p3{ animation-delay:2s; }
+  @keyframes puff{
+    0%{ opacity:0; transform:translate(0,0) scale(0.7); }
+    12%{ opacity:0.55; }
+    100%{ opacity:0; transform:translate(8px,-58px) scale(1.5); }
+  }
+
+  /* 5. hormigón: window grid stagger */
+  .win{
+    opacity:0;
+    transform:scale(0.4);
+    transform-origin:center;
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .era.seen .win{ opacity:1; transform:scale(1); }
+
+  /* 6. sostenible: leaf sway */
+  .leaf-sway{
+    transform-origin: 50% 100%;
+    animation: sway 4.2s ease-in-out infinite;
+  }
+  @keyframes sway{
+    0%,100%{ transform: rotate(0deg); }
+    50%{ transform: rotate(3deg); }
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    padding: 6rem min(8vw,4.5rem) 4rem;
+    max-width:800px;
+    margin:0 auto;
+    text-align:left;
+  }
+  footer h3{font-size:clamp(1.6rem,3vw,2.4rem); max-width:20ch; line-height:1.1;}
+  footer p{line-height:1.6; margin-top:1.2rem; max-width:50ch; color:color-mix(in srgb, var(--fg) 82%, transparent);}
+  footer .credit{margin-top:3rem; font-size:0.82rem; opacity:0.55; font-style:italic;}
+</style>
+</head>
+<body>
+
+<nav class="rail" aria-label="Navegación por etapas">
+  <button data-target="era-1"><span class="dot"></span><span class="lbl">Cueva</span></button>
+  <button data-target="era-2"><span class="dot"></span><span class="lbl">Roma</span></button>
+  <button data-target="era-3"><span class="dot"></span><span class="lbl">Edad Media</span></button>
+  <button data-target="era-4"><span class="dot"></span><span class="lbl">Industrial</span></button>
+  <button data-target="era-5"><span class="dot"></span><span class="lbl">Siglo XX</span></button>
+  <button data-target="era-6"><span class="dot"></span><span class="lbl">Sostenible</span></button>
+</nav>
+
+<header class="hero">
+  <span class="kicker">Un viaje de 36.000 años</span>
+  <h1>La vivienda a través del tiempo</h1>
+  <p>Seis maneras de guarecerse del frío del norte, desde la cueva de Altamira hasta la vivienda de consumo casi nulo. Baja para recorrerlas.</p>
+
+  <button type="button" class="intro-btn" id="openIntroBtn" aria-haspopup="dialog" aria-controls="introModal">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M3 17l1-4.2L13.2 3.6a1.4 1.4 0 0 1 2 0l1.2 1.2a1.4 1.4 0 0 1 0 2L7.2 16 3 17Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    Presentación
+  </button>
+
+  <button type="button" class="scrollcue" id="scrollCueBtn" aria-label="Bajar a la primera etapa">
+    <svg viewBox="0 0 14 20" fill="none"><path d="M7 1v16M1 11l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Desplázate
+  </button>
+</header>
+
+<!-- intro modal: empty, for writing -->
+<div class="modal-overlay" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introModalTitle">
+  <div class="intro-modal">
+    <div class="modal-head">
+      <div>
+        <span class="kicker">Antes de empezar</span>
+        <h2 id="introModalTitle">Presentación</h2>
+      </div>
+      <button type="button" class="modal-close" id="closeIntroBtn" aria-label="Cerrar">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="intro-body">
+      <p>Me llamo <strong>Diego</strong> y siempre he sido un apasionado de la tecnología. Me encanta hacer microproyectos de este estilo para desafiar mis límites: llevo ya dos años haciendo desarrollo web, y este es un proyecto sobre <strong>la vivienda</strong>, donde veremos la evolución de la casa a lo largo de la historia.</p>
+      <p>Todo el sitio está construido a mano con HTML, CSS y JavaScript, sin frameworks: animaciones de scroll, colores que cambian por etapa y pequeños detalles como esta misma ventana son parte de ese reto personal de seguir aprendiendo y de cuidar cada pieza del proyecto.</p>
+      <p class="signature">— Diego</p>
+      <div class="intro-tags">
+        <span>Desarrollo web</span>
+        <span>Historia</span>
+        <span>Diseño</span>
+        <span>Proyecto personal</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="modal-save" id="saveIntroBtn">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- 1. CUEVA -->
+<section class="era" id="era-1" data-index="0" data-bg="#241206" data-fg="#f3e6d2" data-accent="#e2793f">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">1</span><span class="era-range">hace unos 40.000 – 10.000 años · Paleolítico</span></div>
+      <h2>El primer techo era de piedra</h2>
+      <p class="body">Los primeros humanos no construían: <strong>elegían</strong>. Buscaban cuevas orientadas a resguardo del viento y cerca de agua y caza, y encendían un hogar en la entrada que servía a la vez de luz, cocina y frontera frente a la intemperie. No vivían allí todo el año: eran campamentos base que ocupaban por temporadas, según la caza y el clima.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>La cueva de Altamira, en Santillana del Mar, conserva pinturas de bisontes y ciervos de hace más de 20.000 años, algunas dataciones recientes las sitúan incluso más atrás. Fue descubierta en 1868 y, desde 1985, es Patrimonio de la Humanidad.</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <path class="draw" d="M20 210 C10 140 30 60 100 30 C170 60 190 140 180 210" stroke="var(--fg)" stroke-width="2" opacity="0.35"/>
+        <g class="flame-core">
+          <path d="M100 190 C80 165 82 140 100 118 C118 140 120 165 100 190 Z" fill="var(--accent)"/>
+          <path d="M100 178 C90 165 91 150 100 138 C109 150 110 165 100 178 Z" fill="#ffd8a8"/>
+        </g>
+        <path class="draw d2" d="M60 205 h80" stroke="var(--fg)" stroke-width="2" opacity="0.5"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 2. ROMA -->
+<section class="era" id="era-2" data-index="1" data-bg="#c9a267" data-fg="#3a2410" data-accent="#a13d2c">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">2</span><span class="era-range">siglos I a.C. – V d.C. · Roma</span></div>
+      <h2>La casa se convierte en sistema</h2>
+      <p class="body">Roma trae planificación: la <em>domus</em> organiza la vida alrededor de un patio con <strong>impluvium</strong> que recoge la lluvia, y el hipocausto calienta suelos y muros haciendo circular aire caliente bajo el pavimento. En las ciudades más pobladas, la vivienda popular se apila en <strong>ínsulas</strong> de hasta cinco o seis alturas, el germen del bloque de apartamentos.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>Tras las Guerras Cántabras (29–19 a.C.), Roma funda Julióbriga cerca de la actual Retortillo, en Campoo de Enmedio: una de las ciudades romanas más al norte de Hispania, con foro, termas y casas con hipocausto pensadas para el frío de la meseta cántabra.</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <path class="draw" d="M60 210 V70" stroke="var(--fg)" stroke-width="10" stroke-linecap="round"/>
+        <path class="draw d2" d="M140 210 V70" stroke="var(--fg)" stroke-width="10" stroke-linecap="round"/>
+        <path class="draw d3" d="M45 70 h110" stroke="var(--accent)" stroke-width="10" stroke-linecap="round"/>
+        <path class="draw d4" d="M40 60 h120 M100 60 L60 20 L140 20 Z" stroke="var(--fg)" stroke-width="4" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 3. EDAD MEDIA -->
+<section class="era" id="era-3" data-index="2" data-bg="#6c6a61" data-fg="#f2efe6" data-accent="#9a3324">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">3</span><span class="era-range">siglos XII – XV · Edad Media</span></div>
+      <h2>Piedra gruesa, madera y linaje</h2>
+      <p class="body">La casa medieval del norte responde a la ganadería y al frío: muros de piedra de hasta un metro de espesor, planta baja para el ganado y el grano, y una vivienda arriba con una <strong>solana</strong> de madera acristalada que capta el sol débil del invierno. En las fachadas más nobles, un escudo heráldico tallado anuncia el apellido de quien vive dentro.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>Santillana del Mar es uno de los conjuntos medievales mejor conservados de España: sus casonas con solanas y escudos flanquean la calle que lleva hasta la Colegiata, del siglo XII. El dicho popular la llama «la villa de las tres mentiras».</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <path class="draw" d="M40 210 V110 L100 60 L160 110 V210 Z" stroke="var(--fg)" stroke-width="3"/>
+        <rect class="draw d2" x="70" y="130" width="60" height="45" stroke="var(--accent)" stroke-width="3"/>
+        <path class="draw d3" d="M75 135 v35 M90 135 v35 M105 135 v35 M120 135 v35" stroke="var(--accent)" stroke-width="1.4"/>
+        <path class="draw d4" d="M85 90 l15 -18 15 18 z" stroke="var(--fg)" stroke-width="2.4"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 4. INDUSTRIAL -->
+<section class="era" id="era-4" data-index="3" data-bg="#1b1815" data-fg="#ece6de" data-accent="#c76a3a">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">4</span><span class="era-range">siglo XIX · Revolución Industrial</span></div>
+      <h2>Humo, hierro y hacinamiento</h2>
+      <p class="body">La fábrica atrae a miles de familias del campo a la ciudad, y la vivienda no da abasto: barrios enteros crecen pegados a las chimeneas, con corralas de habitaciones diminutas alrededor de un patio compartido, agua escasa y saneamiento casi inexistente. El hierro colado y las primeras estructuras metálicas empiezan a asomar en fábricas antes que en casas.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>En 1899 arranca la siderurgia Nueva Montaña Quijano junto a Santander, y a su alrededor crece un poblado obrero construido por la propia empresa para alojar a sus trabajadores, uno de los primeros barrios industriales de Cantabria.</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <rect class="draw" x="80" y="80" width="30" height="130" stroke="var(--fg)" stroke-width="3"/>
+        <rect class="draw d2" x="72" y="65" width="46" height="18" stroke="var(--fg)" stroke-width="3"/>
+        <circle class="puff" cx="95" cy="60" r="10" fill="var(--fg)"/>
+        <circle class="puff p2" cx="95" cy="60" r="8" fill="var(--fg)"/>
+        <circle class="puff p3" cx="95" cy="60" r="12" fill="var(--fg)"/>
+        <path class="draw d3" d="M30 210 h140" stroke="var(--accent)" stroke-width="2" opacity="0.6"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 5. SIGLO XX -->
+<section class="era" id="era-5" data-index="4" data-bg="#6f7274" data-fg="#f2f1ef" data-accent="#e0b04e">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">5</span><span class="era-range">1940 – 1980 · Siglo XX</span></div>
+      <h2>La vivienda hecha en serie</h2>
+      <p class="body">El hormigón permite construir rápido y barato a gran escala: bloques idénticos, plantas repetidas, escaleras estrechas. En España, el Instituto Nacional de la Vivienda, creado en 1939, y las políticas de vivienda social de las décadas siguientes levantan polígonos enteros para acoger el éxodo rural hacia las ciudades industriales.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>Torrelavega y los alrededores de Santander se llenan de bloques de vivienda social pensados para la mano de obra de fábricas como Sniace o Solvay, muchos de ellos aún habitados hoy con las fachadas de hormigón visto originales.</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <rect x="40" y="30" width="120" height="180" stroke="var(--fg)" stroke-width="3" fill="none"/>
+        <rect class="win" x="55" y="45" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="90" y="45" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="125" y="45" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="55" y="80" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="90" y="80" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="125" y="80" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="55" y="115" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="90" y="115" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="125" y="115" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="55" y="150" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="90" y="150" width="20" height="20" fill="var(--accent)"/>
+        <rect class="win" x="125" y="150" width="20" height="20" fill="var(--accent)"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 6. SOSTENIBLE -->
+<section class="era" id="era-6" data-index="5" data-bg="#0d2b1d" data-fg="#eaf2e9" data-accent="#8fbf4d">
+  <div class="era-grid">
+    <div>
+      <div class="era-meta"><span class="era-num">6</span><span class="era-range">Hoy y mañana</span></div>
+      <h2>Construir sin agotar</h2>
+      <p class="body">Desde 2021, la normativa europea obliga a que toda vivienda nueva en España sea de <strong>consumo de energía casi nulo</strong>, y el estándar Passivhaus exige limitar la calefacción a unos 15 kWh por metro cuadrado al año, frente a los más de 100 de una casa típica del siglo XX. Madera contralaminada, orientación pensada para el sol y cubiertas vegetales sustituyen al hormigón como protagonistas.</p>
+      <div class="nota">
+        <span class="tag">Apunte cántabro</span>
+        <p>Los proyectos de rehabilitación energética en Cantabria combinan estas exigencias con materiales de siempre, piedra y madera de la región, en lugar de sustituirlos: la respuesta al frío del norte vuelve, en parte, a sus orígenes.</p>
+      </div>
+    </div>
+    <div class="visual">
+      <svg viewBox="0 0 200 220" fill="none">
+        <path class="draw" d="M40 210 V120 L100 75 L160 120 V210 Z" stroke="var(--fg)" stroke-width="3"/>
+        <rect class="draw d2" x="55" y="150" width="25" height="60" stroke="var(--accent)" stroke-width="2"/>
+        <rect class="draw d3" x="120" y="150" width="25" height="60" stroke="var(--accent)" stroke-width="2"/>
+        <g class="leaf-sway">
+          <path class="draw d4" d="M100 100 C80 90 75 65 90 45 C105 65 100 90 100 100 Z" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<footer data-bg="#0a2016">
+  <h3>Del hogar en la roca a la casa que casi no gasta</h3>
+  <p>Seis etapas, un mismo reto: protegerse del frío del norte con lo que había alrededor en cada momento, piedra, hormigón o madera contralaminada. Cantabria, entre cuevas paleolíticas y polígonos industriales, ha sido escenario de casi todas ellas.</p>
+  <p class="credit">Página elaborada para un IES de Cantabria.</p>
+</footer>
+
+<script>
+  const eras = document.querySelectorAll('.era');
+  const railButtons = document.querySelectorAll('.rail button');
+
+  railButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById(btn.dataset.target).scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+
+  // background / accent color, tied to the section crossing the viewport center
+  const bgObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const t = entry.target;
+        document.body.style.setProperty('--bg', t.dataset.bg);
+        document.body.style.setProperty('--fg', t.dataset.fg);
+        document.body.style.setProperty('--accent', t.dataset.accent);
+        railButtons.forEach(b=>b.classList.toggle('active', b.dataset.target === t.id));
+      }
+    });
+  }, {rootMargin:'-45% 0px -45% 0px', threshold:0});
+  eras.forEach(e=>bgObserver.observe(e));
+
+  // footer color
+  const footer = document.querySelector('footer');
+  const footObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        document.body.style.setProperty('--bg', entry.target.dataset.bg);
+        railButtons.forEach(b=>b.classList.remove('active'));
+      }
+    });
+  }, {rootMargin:'-45% 0px -45% 0px', threshold:0});
+  footObserver.observe(footer);
+
+  // one-time signature animation per era, on first view
+  const seenObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('seen');
+      }
+    });
+  }, {threshold:0.35});
+  eras.forEach(e=>seenObserver.observe(e));
+
+  // ---------- down-arrow: only scrolls to the first era ----------
+  const scrollCueBtn = document.getElementById('scrollCueBtn');
+  scrollCueBtn.addEventListener('click', ()=>{
+    document.getElementById('era-1').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  // ---------- intro modal: open / write / close ----------
+  const introModal = document.getElementById('introModal');
+  const openIntroBtn = document.getElementById('openIntroBtn');
+  const closeIntroBtn = document.getElementById('closeIntroBtn');
+  const saveIntroBtn = document.getElementById('saveIntroBtn');
+  let lastFocused = null;
+
+  function openModal(){
+    lastFocused = document.activeElement;
+    introModal.classList.add('open');
+    document.body.classList.add('modal-open');
+    setTimeout(()=>closeIntroBtn.focus(), 300);
+  }
+  function closeModal(){
+    introModal.classList.remove('open');
+    document.body.classList.remove('modal-open');
+    if(lastFocused) lastFocused.focus();
+  }
+
+  openIntroBtn.addEventListener('click', openModal);
+  closeIntroBtn.addEventListener('click', closeModal);
+  saveIntroBtn.addEventListener('click', closeModal);
+
+  introModal.addEventListener('click', (e)=>{
+    if(e.target === introModal) closeModal();
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && introModal.classList.contains('open')) closeModal();
+  });
+</script>
+
+</body>
+</html>
